@@ -3,9 +3,7 @@ import datetime
 from cryptography.hazmat._oid import NameOID
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
-import qrcode
 from xml.etree import ElementTree as ET
-from io import BytesIO
 from cryptography.hazmat.primitives.serialization import pkcs12
 import base64
 
