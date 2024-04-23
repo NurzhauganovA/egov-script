@@ -114,7 +114,7 @@ def main(count_loop, choice_licensor_arg, full_name_representative_arg, phone_nu
         button_select_certificate.click()
         driver.implicitly_wait(5)
 
-        automate_ncalayer("AUTH")
+        # automate_ncalayer("AUTH")
 
         auth = authorization(driver)
         if auth:
@@ -174,6 +174,41 @@ def elicense_new_tab(driver, choice_licensor_arg, full_name_representative_arg, 
         driver.get("https://elicense.kz")
         change_elicense_language_to_russian(driver)
         # TODO: Осы жерден бастап `Строительство` деген бағананы таңдап, әрі қарай жалғастырып код жазу керек. ФИО, және т.б. данные толтыратын жерге дейін жазу керек. Дальше `create_order()` метод жалғастырады.
+        driver.execute_script("window.scrollBy(0, 500);")
+        driver.find_element(By.ID, "new-service-button-af-14").click() #click 'Строительство'
+        driver.implicitly_wait(30)
+        driver.find_elements(By.CLASS_NAME, "new-detail-single")[0].find_elements(By.TAG_NAME, "a")[7].click() #click 'Предоставление исходных материалов при разработке'
+        driver.implicitly_wait(10)
+        numeric = driver.find_elements(By.CLASS_NAME, "numeric")[0]
+        first_li = numeric.find_elements(By.TAG_NAME, "li")[0]
+        print(first_li.text)
+        links = first_li.find_elements(By.CLASS_NAME, "new-status-a")
+        links[0].click()
+        driver.implicitly_wait(10)
+        driver.find_element(By.CLASS_NAME, "new-order-online").click()
+
+        search_text = choice_licensor_arg
+        search_box = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, "licensiarSearch"))
+        )
+        for char in search_text:
+            search_box.send_keys(char)
+            time.sleep(0.5)
+
+        licensor_section = driver.find_element(By.ID, "treeSection").find_element(By.CLASS_NAME, "tree").find_element(
+            By.TAG_NAME, "ul")
+        licensors_list = licensor_section.find_elements(By.TAG_NAME, "li")
+        licensors = []
+
+        for licensor in licensors_list:
+            licensor_style = licensor.get_attribute("style")
+            if "display: none" not in licensor_style:
+                licensors.append(licensor)
+
+        licensors[1].click()
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, "newRequest"))
+        ).click()
 
         create_order(driver, full_name_representative_arg, phone_number_arg, full_name_object_rus_arg,
                      full_name_object_kaz_arg, region_arg, customer_arg, bin_arg, doc_land_plot_arg, request_list_tech_doc)
@@ -210,8 +245,130 @@ def create_order(driver, full_name_representative_arg, phone_number_arg, full_na
 
         driver.find_element(By.ID, "toolbar-1016-targetEl").find_elements(By.TAG_NAME, "div")[1].click()  # button "Next"
 
-        # TODO: Менің комментировать етіп қойған кодыма қарап, түсініп, жазып көрсең болады. Важный момент, `+` басып, файл таңдайтын кезде `switch to iframe` метод қолдану керек.
+        time.sleep(10)
 
+
+        # TODO: Менің комментировать етіп қойған кодыма қарап, түсініп, жазып көрсең болады. Важный момент, `+` басып, файл таңдайтын кезде `switch to iframe` метод қолдану керек.
+        driver.find_element(By.ID, "panel-1012-formTable").find_elements(By.TAG_NAME, "tbody")[0].find_element(
+            By.TAG_NAME, "tr").find_elements(By.TAG_NAME, "td")[
+            0].find_element(By.TAG_NAME, "input").send_keys(full_name_object_rus_arg)  # Полное наименование объекта russian
+        print(driver.find_element(By.ID, "panel-1012-formTable").find_elements(By.TAG_NAME, "tbody")[0].find_element(
+            By.TAG_NAME, "tr").find_elements(By.TAG_NAME, "td")[
+            0].find_element(By.TAG_NAME, "input").text)
+        driver.find_element(By.ID, "panel-1012-formTable").find_elements(By.TAG_NAME, "tbody")[1].find_element(
+            By.TAG_NAME, "tr").find_elements(By.TAG_NAME, "td")[
+            0].find_element(By.TAG_NAME, "input").send_keys(full_name_object_kaz_arg)  # Полное наименование объекта kazakh
+        driver.find_element(By.ID, "panel-1012-formTable").find_elements(By.TAG_NAME, "tbody")[2].find_element(
+            By.TAG_NAME, "tr").find_elements(By.TAG_NAME, "td")[
+            0].find_element(By.TAG_NAME, "input").send_keys(region_arg)  # region
+        driver.find_element(By.ID, "panel-1012-formTable").find_elements(By.TAG_NAME, "tbody")[3].find_element(
+            By.TAG_NAME, "tr").find_elements(By.TAG_NAME, "td")[
+            0].find_element(By.TAG_NAME, "input").send_keys(customer_arg)  # customer_rus
+        driver.find_element(By.ID, "panel-1012-formTable").find_elements(By.TAG_NAME, "tbody")[4].find_element(
+            By.TAG_NAME, "tr").find_elements(By.TAG_NAME, "td")[
+            0].find_element(By.TAG_NAME, "input").send_keys(customer_arg)  # customer_kaz
+        driver.find_element(By.ID, "panel-1012-formTable").find_elements(By.TAG_NAME, "tbody")[7].find_element(
+            By.TAG_NAME, "tr").find_elements(By.TAG_NAME, "td")[
+            0].find_element(By.TAG_NAME, "input").send_keys(bin_arg)  # bin
+
+        # driver.find_element(By.ID, "button-1023-btnWrap").click()
+
+        #Create and upload the document doc_land_plot_arg
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, "button-1023-btnWrap"))
+        ).click()
+
+        iframe = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.TAG_NAME, "iframe"))
+        )
+        driver.switch_to.frame(iframe)
+        print("Iframe")
+
+        try:
+            WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.CLASS_NAME, "new-lk-wrapper"))
+            ).find_element(By.TAG_NAME, "div").find_elements(By.TAG_NAME, "button")[1].click()
+        except Exception as e:
+            print("Not found button", e)
+        print("New document")
+
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, "name"))
+        ).send_keys(doc_land_plot_arg)
+        print("Write file path")
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CLASS_NAME, "new-btns"))
+        ).find_elements(By.TAG_NAME, "div")[0].click()
+        print("Downloading")
+        time.sleep(15)
+        driver.implicitly_wait(100)
+
+        try:
+            documents = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.ID, "DocumentTable"))
+            ).find_element(By.TAG_NAME, "tbody")
+
+            documents.find_elements(By.TAG_NAME, "tr")[1].find_elements(By.TAG_NAME, "td")[0].find_element(By.TAG_NAME,
+                                                                                                           "a").click()
+        except Exception as e:
+            print("Not found table", e)
+
+        time.sleep(5)
+        driver.switch_to.default_content()
+
+        # Create and upload the document request_list_tech_doc
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, "button-1023-btnWrap"))
+        ).click()
+
+        iframe = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.TAG_NAME, "iframe"))
+        )
+        driver.switch_to.frame(iframe)
+        print("Iframe")
+
+        try:
+            WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.CLASS_NAME, "new-lk-wrapper"))
+            ).find_element(By.TAG_NAME, "div").find_elements(By.TAG_NAME, "button")[1].click()
+        except Exception as e:
+            print("Not found button", e)
+        print("New document")
+
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, "name"))
+        ).send_keys(request_list_tech_doc)
+        print("Write file path")
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CLASS_NAME, "new-btns"))
+        ).find_elements(By.TAG_NAME, "div")[0].click()
+        print("Downloading")
+        time.sleep(15)
+        driver.implicitly_wait(100)
+
+        try:
+            documents = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.ID, "DocumentTable"))
+            ).find_element(By.TAG_NAME, "tbody")
+
+            documents.find_elements(By.TAG_NAME, "tr")[1].find_elements(By.TAG_NAME, "td")[0].find_element(By.TAG_NAME,
+                                                                                                           "a").click()
+        except Exception as e:
+            print("Not found table", e)
+
+        time.sleep(5)
+        driver.switch_to.default_content()
+
+        driver.find_element(By.ID, "toolbar-1017-targetEl").find_elements(By.TAG_NAME, "div")[
+            0].click()  # button "Save"
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, "button-1005-btnInnerEl"))  # button "OK"
+        ).click()
+
+        driver.implicitly_wait(10)
+        driver.find_element(By.ID, "toolbar-1017-targetEl").find_elements(By.TAG_NAME, "div")[
+            2].click()  # button "Next"
+        driver.implicitly_wait(10)
         # time.sleep(10)
         # driver.implicitly_wait(100)
         # table = WebDriverWait(driver, 20).until(
@@ -352,19 +509,19 @@ def create_order(driver, full_name_representative_arg, phone_number_arg, full_na
         # time.sleep(5)
         # driver.switch_to.default_content()
 
-        time.sleep(10)
-        driver.implicitly_wait(20)
-
-        driver.find_element(By.ID, "toolbar-1012-targetEl").find_elements(By.TAG_NAME, "div")[0].click()  # button "Save"
-
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.ID, "button-1005-btnInnerEl"))  # button "OK"
-        ).click()
-        driver.implicitly_wait(10)
-        driver.find_element(By.ID, "toolbar-1012-targetEl").find_elements(By.TAG_NAME, "div")[2].click()  # button "Next"
-
-        time.sleep(10)
-        driver.implicitly_wait(20)
+        # time.sleep(10)
+        # driver.implicitly_wait(20)
+        #
+        # driver.find_element(By.ID, "toolbar-1012-targetEl").find_elements(By.TAG_NAME, "div")[0].click()  # button "Save"
+        #
+        # WebDriverWait(driver, 10).until(
+        #     EC.presence_of_element_located((By.ID, "button-1005-btnInnerEl"))  # button "OK"
+        # ).click()
+        # driver.implicitly_wait(10)
+        # driver.find_element(By.ID, "toolbar-1012-targetEl").find_elements(By.TAG_NAME, "div")[2].click()  # button "Next"
+        #
+        # time.sleep(10)
+        # driver.implicitly_wait(20)
 
         #  Confirm the order with EDS
         WebDriverWait(driver, 10).until(
