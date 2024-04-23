@@ -18,7 +18,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-from send_request_egov import send_auth_request
+# from send_request_egov import send_auth_request
 
 
 created_orders = []
@@ -144,14 +144,14 @@ def auth_with_eds(driver, choice_licensor_arg, full_name_representative_arg, pho
     timeTicket = root.find('timeTicket').text
     sessionID = root.find('sessionid').text
 
-    try:
-        send_auth_request(sessionID, timeTicket, choice_licensor_arg, full_name_representative_arg, phone_number_arg, purpose_use_land_plot_arg,
-                          estimated_deminsions_land_plot_arg, location_land_plot_arg, requested_right_use_arg,
-                          iin_bin_applicant_arg, conclusion_land_commission_arg, order_approval_land_plot_arg)
-        return True
-    except Exception as e:
-        print(e)
-        return False
+    # try:
+    #     send_auth_request(sessionID, timeTicket, choice_licensor_arg, full_name_representative_arg, phone_number_arg, purpose_use_land_plot_arg,
+    #                       estimated_deminsions_land_plot_arg, location_land_plot_arg, requested_right_use_arg,
+    #                       iin_bin_applicant_arg, conclusion_land_commission_arg, order_approval_land_plot_arg)
+    #     return True
+    # except Exception as e:
+    #     print(e)
+    #     return False
 
 
 def authorization(driver):

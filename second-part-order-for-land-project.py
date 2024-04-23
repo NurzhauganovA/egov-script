@@ -410,10 +410,12 @@ class EgovForm(QMainWindow):
         layout.addWidget(self.submit_button)
 
         central_widget.setLayout(layout)
+        print("init")
 
     def select_file(self):
         options = QFileDialog.Options()
         filename, _ = QFileDialog.getOpenFileName(self, "Выбрать файл", "", "All Files (*);;PNG Files (*.png);;JPEG Files (*.jpg);;PDF Files (*.pdf)", options=options)
+        print(filename)
         if filename:
             self.order_template.setText(filename)
 
