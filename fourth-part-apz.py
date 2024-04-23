@@ -318,7 +318,7 @@ def create_order(driver, full_name_representative_arg, phone_number_arg, full_na
 
         # Create and upload the document request_list_tech_doc
         WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.ID, "button-1023-btnWrap"))
+            EC.presence_of_element_located((By.ID, "button-1028-btnWrap"))
         ).click()
 
         iframe = WebDriverWait(driver, 10).until(
