@@ -114,7 +114,7 @@ def main(count_loop, choice_licensor_arg, full_name_representative_arg, phone_nu
         button_select_certificate.click()
         driver.implicitly_wait(5)
 
-        # automate_ncalayer("AUTH")
+        automate_ncalayer("AUTH")
 
         auth = authorization(driver)
         if auth:
@@ -220,6 +220,13 @@ def create_order(driver, full_name_representative_arg, phone_number_arg, full_na
                  full_name_object_kaz_arg, region_arg, customer_arg, bin_arg, doc_land_plot_arg, request_list_tech_doc):
     try:
         time.sleep(3)
+        number_order = \
+            driver.find_element(By.ID, "panel-1010-formTable").find_elements(By.TAG_NAME, "tbody")[0].find_element(
+                By.TAG_NAME,
+                "tr").find_elements(
+                By.TAG_NAME, "td")[0].find_element(By.TAG_NAME, "input")
+        print("number order", number_order.text)
+        print(number_order)
         fio = \
             driver.find_element(By.ID, "panel-1011-formTable").find_elements(By.TAG_NAME, "tbody")[1].find_element(
                 By.TAG_NAME,
@@ -275,7 +282,7 @@ def create_order(driver, full_name_representative_arg, phone_number_arg, full_na
 
         #Create and upload the document doc_land_plot_arg
         WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.ID, "button-1023-btnWrap"))
+            EC.presence_of_element_located((By.ID, "button-1023-btnIconEl"))
         ).click()
 
         iframe = WebDriverWait(driver, 10).until(
@@ -293,7 +300,7 @@ def create_order(driver, full_name_representative_arg, phone_number_arg, full_na
         print("New document")
 
         WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.ID, "name"))
+            EC.presence_of_element_located((By.ID, "file"))
         ).send_keys(doc_land_plot_arg)
         print("Write file path")
         WebDriverWait(driver, 10).until(
