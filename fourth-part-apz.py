@@ -114,7 +114,7 @@ def main(count_loop, choice_licensor_arg, full_name_representative_arg, phone_nu
         button_select_certificate.click()
         driver.implicitly_wait(5)
 
-        # automate_ncalayer("AUTH")
+        automate_ncalayer("AUTH")
 
         auth = authorization(driver)
         if auth:
@@ -280,7 +280,7 @@ def create_order(driver, full_name_representative_arg, phone_number_arg, full_na
 
         #Create and upload the document doc_land_plot_arg
         WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.ID, "button-1023-btnWrap"))
+            EC.presence_of_element_located((By.ID, "button-1023-btnIconEl"))
         ).click()
 
         iframe = WebDriverWait(driver, 10).until(
@@ -298,7 +298,7 @@ def create_order(driver, full_name_representative_arg, phone_number_arg, full_na
         print("New document")
 
         WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.ID, "name"))
+            EC.presence_of_element_located((By.ID, "file"))
         ).send_keys(doc_land_plot_arg)
         print("Write file path")
         WebDriverWait(driver, 10).until(
