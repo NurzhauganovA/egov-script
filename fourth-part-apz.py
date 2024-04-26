@@ -220,6 +220,11 @@ def create_order(driver, full_name_representative_arg, phone_number_arg, full_na
                  full_name_object_kaz_arg, region_arg, customer_arg, bin_arg, doc_land_plot_arg, request_list_tech_doc):
     try:
         time.sleep(3)
+        number_orders = driver.find_element(By.ID, "panel-1010-formTable").find_elements(By.TAG_NAME, "tbody")[0].find_element(
+                By.TAG_NAME,
+                "tr").find_elements(
+                By.TAG_NAME, "td")[0].find_element(By.TAG_NAME, "input").get_attribute('value')
+        print(number_orders)
         fio = \
             driver.find_element(By.ID, "panel-1011-formTable").find_elements(By.TAG_NAME, "tbody")[1].find_element(
                 By.TAG_NAME,
@@ -548,6 +553,21 @@ def create_order(driver, full_name_representative_arg, phone_number_arg, full_na
             ).find_elements(By.TAG_NAME, "input")[4].click()
             automate_ncalayer("GOST")
             time.sleep(10)
+
+            # after confirmation use EDS
+            my_cabinet = driver.find_element(By.ID, 'LkBox').click()
+            drop_down = driver.find_elements(By.ID, 'myDropdownMainLK')[0].find_elements(By.TAG_NAME, 'a')[2].click()
+            driver.implicitly_wait(5)
+            driver.find_element(By.ID, 'GlobalNumberStr').send_keys(number_orders)
+            driver.find_element(By.ID, 'submit').click()
+            driver.implicitly_wait(5)
+            driver.find_element(By.XPATH, '//*[@id="table__content__body"]/tbody/tr[2]/td[4]/div/a/img').click()
+            driver.implicitly_wait(5)
+            driver.find_element(By.ID, 'btnDownloadRequest').click()
+            driver.find_element(By.ID, 'menuitem-1010-itemEl').click()
+
+            #upload file to the server
+
             driver.quit()
         except Exception as e:
             print(e)
