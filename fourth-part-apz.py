@@ -1,5 +1,7 @@
 import json
 from datetime import timezone, datetime
+import os
+import requests
 
 import pygetwindow as gw
 import openpyxl
@@ -16,9 +18,11 @@ from selenium.webdriver import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.chrome.options import Options
 
 
 created_orders = []
+absolute_path = os.path.dirname(os.path.abspath(__file__))
 
 
 def moveAllWindows():
@@ -99,7 +103,18 @@ def main(count_loop, choice_licensor_arg, full_name_representative_arg, phone_nu
          full_name_object_kaz_arg, region_arg, customer_arg, bin_arg, doc_land_plot_arg, request_list_tech_doc):
 
     try:
-        driver = webdriver.Chrome()
+        #Set the download path
+        options = Options()
+        os.makedirs(os.path.join(absolute_path, "files"), exist_ok=True)
+        download_directory = os.path.join(absolute_path, "files") #enter the path of the download file
+        options.add_experimental_option("prefs", {
+            "download.default_directory": download_directory,
+            "download.prompt_for_download": False,
+            "download.directory_upgrade": True,
+            "safebrowsing.enabled": True
+        })
+
+        driver = webdriver.Chrome(options=options)
         driver.get("https://www.egov.kz")
         driver.implicitly_wait(5)
 
@@ -554,6 +569,9 @@ def create_order(driver, full_name_representative_arg, phone_number_arg, full_na
             automate_ncalayer("GOST")
             time.sleep(10)
 
+            #write here the code which close the opened window about feedback
+
+
             # after confirmation use EDS
             my_cabinet = driver.find_element(By.ID, 'LkBox').click()
             drop_down = driver.find_elements(By.ID, 'myDropdownMainLK')[0].find_elements(By.TAG_NAME, 'a')[2].click()
@@ -567,6 +585,19 @@ def create_order(driver, full_name_representative_arg, phone_number_arg, full_na
             driver.find_element(By.ID, 'menuitem-1010-itemEl').click()
 
             #upload file to the server
+            # URL to the API that handles uploads
+            time.sleep(15)
+            url = 'file://10.10.10.144/Serv-55/Отдел%20аренды/1.КаР-Тел/СМР%20ВВОД/Туркестанская%20область/SHM_Tau/АПЗ'  # Change this to the actual upload API endpoint
+
+            # The path to the file you want to upload
+            file_path = os.path.join(absolute_path, 'files', number_orders + '_ru.pdf')  # Update this path
+
+            # Open the file and send it in a POST request
+            with open(file_path, 'rb') as f:
+                files = {'file': (file_path, f)}
+                response = requests.post(url, files=files)
+
+            print(response.text)  # Print response from the server
 
             driver.quit()
         except Exception as e:
