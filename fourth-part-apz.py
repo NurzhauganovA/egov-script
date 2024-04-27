@@ -587,7 +587,7 @@ def create_order(driver, full_name_representative_arg, phone_number_arg, full_na
             #upload file to the server
             # URL to the API that handles uploads
             time.sleep(15)
-            url = 'file://10.10.10.144/Serv-55/Отдел%20аренды/1.КаР-Тел/СМР%20ВВОД/Туркестанская%20область/SHM_Tau/АПЗ'  # Change this to the actual upload API endpoint
+            url = os.sep.join(request_list_tech_doc.split('/')[:-1]).replace("\\", "/")  # Change this to the actual upload API endpoint
 
             # The path to the file you want to upload
             file_path = os.path.join(absolute_path, 'files', number_orders + '_ru.pdf')  # Update this path
