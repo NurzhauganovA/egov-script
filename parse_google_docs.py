@@ -229,5 +229,5 @@ def get_address_by_object_name(object_name):
     return ""
 
 
-app = get_all_values(r'\\10.10.10.144\Serv-55\Отдел аренды\1.КаР-Тел\СМР ВВОД\Восточно-Казахстанская область\OSK_Pervomay\1 этап')
+app = get_all_values(r'\\10.10.10.144\Serv-55\Отдел аренды\1.КаР-Тел\СМР ВВОД\Актюбинская область\AKT_Elovaya\1 этап')
 print(app)
