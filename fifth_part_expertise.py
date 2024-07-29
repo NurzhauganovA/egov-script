@@ -61,7 +61,14 @@ class ExpertiseDirectory(QMainWindow):
 
 def moveAllWindows():
     time.sleep(2)
-    window = gw.getAllWindows()[0]
+    window = None
+
+    all_windows = gw.getAllWindows()
+    for window in all_windows:
+        if window.title != "":
+            window = window
+            break
+
     window.minimize()
     window.restore()
     window.activate()
@@ -72,20 +79,20 @@ def moveAllWindows():
 
 
 def sign_with_eds():
-    time.sleep(25)
-    # password = 'May2021'
-    # moveAllWindows()
-    # pyautogui.click(1844, 1046)
-    # time.sleep(2)
-    # pyautogui.typewrite(password)
-    # time.sleep(2)
-    # pyautogui.hotkey('enter')
-    # time.sleep(2)
-    # pyautogui.hotkey('enter')
+    time.sleep(5)
+    password = 'May2021'
+    moveAllWindows()
+    pyautogui.click(1840, 1040)
+    time.sleep(2)
+    pyautogui.typewrite(password)
+    time.sleep(2)
+    pyautogui.hotkey('enter')
+    time.sleep(2)
+    pyautogui.hotkey('enter')
 
 
 def sing_in_ncalayer(search):
-    search_certificate_points = (1681, 70)
+    search_certificate_points = (1574, 105)
     pyautogui.click(search_certificate_points)
     time.sleep(1)
     pyperclip.copy(search)
@@ -94,57 +101,45 @@ def sing_in_ncalayer(search):
     time.sleep(1)
     pyautogui.press('enter')
     time.sleep(1)
-    AUTH_file_points = (390, 190)
+    AUTH_file_points = (711, 276)
     pyautogui.click(AUTH_file_points)
     pyautogui.press('enter')
 
 
 def automate_ncalayer(search):
-    time.sleep(25)
-    # try:
-    #     moveAllWindows()
-    #
-    #     # time.sleep(20)
-    #     # start_x, start_y = pyautogui.position()
-    #     # print(start_x, start_y)
-    #
-    #     eds_directory_path = r"\\10.10.10.144\Serv-55\Отдел аренды\1.КаР-Тел\ЭЦП КаР-Тел"
-    #     password = "May2021"
-    #     pyperclip.copy(eds_directory_path)
-    #     time.sleep(1)
-    #     choose_eds = (538, 606)
-    #     pyautogui.click(choose_eds)
-    #     time.sleep(1)
-    #     moveAllWindows()
-    #
-    #     type_eds_path = (1458, 71)
-    #     pyautogui.click(type_eds_path)
-    #
-    #     pyautogui.hotkey('ctrl', 'v')
-    #     pyautogui.press('enter')
-    #     time.sleep(1)
-    #
-    #     sing_in_ncalayer(search)
-    #
-    #     write_password_points = (356, 654)
-    #     pyautogui.click(write_password_points)
-    #     time.sleep(1)
-    #     pyperclip.copy(password)
-    #     time.sleep(1)
-    #     pyautogui.hotkey('ctrl', 'v')
-    #     time.sleep(1)
-    #     pyautogui.press('enter')
-    #     time.sleep(1)
-    #
-    #     moveAllWindows()
-    #
-    #     pyautogui.press('enter')
-    #     time.sleep(1)
-    #
-    #     sign_certificate_points = (870, 911)
-    #     pyautogui.click(sign_certificate_points)
-    # except Exception as e:
-    #     raise ValueError(f"Ошибка automate_ncalayer(): {e}")
+    # time.sleep(10)
+    try:
+        moveAllWindows()
+        eds_directory_path = r"\\10.10.10.144\Serv-55\Отдел аренды\1.КаР-Тел\ЭЦП КаР-Тел"
+        password = "May2021"
+        pyperclip.copy(eds_directory_path)
+        time.sleep(1)
+        choose_eds = (710, 622)
+        pyautogui.click(choose_eds)
+        time.sleep(1)
+        moveAllWindows()
+        type_eds_path = (1220, 100)
+        pyautogui.click(type_eds_path)
+        pyautogui.hotkey('ctrl', 'v')
+        pyautogui.press('enter')
+        time.sleep(1)
+        sing_in_ncalayer(search)
+        write_password_points = (498, 697)
+        pyautogui.click(write_password_points)
+        time.sleep(1)
+        pyperclip.copy(password)
+        time.sleep(1)
+        pyautogui.hotkey('ctrl', 'v')
+        time.sleep(1)
+        pyautogui.press('enter')
+        time.sleep(1)
+        moveAllWindows()
+        pyautogui.press('enter')
+        time.sleep(1)
+        sign_certificate_points = (843, 1001)
+        pyautogui.click(sign_certificate_points)
+    except Exception as e:
+        raise ValueError(f"Ошибка automate_ncalayer(): {e}")
 
 
 def start(path):
@@ -201,6 +196,7 @@ def main(driver, path):
     try:
         while True:
             context = config_main(fr'{path}')
+            print(context)
 
             modal_window = driver.find_elements(By.ID, "modalConcNotice")
 
@@ -298,7 +294,17 @@ def main(driver, path):
             for region_obj in region_object:
                 region_name = region_obj.find_element(By.TAG_NAME, "span").find_element(By.TAG_NAME, "strong").text
                 print("region_name:", region_name)
-                if (city and city in region_name) or (oblast and oblast in region_name):
+                if oblast and oblast in region_name:
+                    region_obj.find_element(By.TAG_NAME, "div").click()
+                    time.sleep(7)
+                    subregions = region_obj.find_element(By.TAG_NAME, "ul").find_elements(By.TAG_NAME, "li")
+                    for subregion in subregions:
+                        subregion_name = subregion.find_element(By.TAG_NAME, "label").text
+                        print("subregion_name:", subregion_name)
+                        if (city and city in subregion_name) or (region and region in subregion_name) or (sel_okrug and sel_okrug in subregion_name):
+                            subregion.find_elements(By.TAG_NAME, "input")[0].click()
+                            break
+                elif city and city in region_name:
                     region_obj.find_element(By.TAG_NAME, "div").click()
                     time.sleep(7)
                     subregions = region_obj.find_element(By.TAG_NAME, "ul").find_elements(By.TAG_NAME, "li")
@@ -462,7 +468,6 @@ def main(driver, path):
             button_ready.click()
             time.sleep(2)
             sign_with_eds()
-
             success_created = successCreatedOrder(driver)
             if success_created:
                 try:
@@ -694,6 +699,7 @@ def documentation_part(driver, path):
                                     EC.presence_of_element_located((By.ID, 'subscribe-files'))
                                 ).click()
                                 time.sleep(2)
+
                                 sign_with_eds()
                                 time.sleep(5)
                         else:
@@ -717,6 +723,7 @@ def documentation_part(driver, path):
 
         time.sleep(2)
         sign_with_eds()
+
         time.sleep(5)
 
         WebDriverWait(driver, 10).until(
@@ -760,7 +767,9 @@ def documentation_part(driver, path):
                                     EC.presence_of_element_located((By.ID, 'subscribe-files'))
                                 ).click()
                                 time.sleep(2)
+
                                 sign_with_eds()
+
                                 time.sleep(5)
 
                             idx.append('')
@@ -785,6 +794,7 @@ def documentation_part(driver, path):
         ).click()
 
         time.sleep(2)
+
         sign_with_eds()
 
         time.sleep(3600)

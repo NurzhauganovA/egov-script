@@ -5,6 +5,7 @@ import re
 from parse_google_docs import get_choice_licensor_by_object_name, get_full_name_representative_by_object_name, \
     get_phone_number_by_object_name, get_address_by_object_name
 
+
 context = {}
 
 
@@ -146,4 +147,4 @@ def get_data_values(path):
 
 
 if __name__ == '__main__':
-    get_data_values(r'\\10.10.10.144\Serv-55\Отдел аренды\1.КаР-Тел\СМР ВВОД\Костанайская область\KOS_Vladimirovka2\АПЗ')
+    get_data_values(r'\\10.10.10.144\Serv-55\Отдел аренды\1.КаР-Тел\1. СМР ВВОД\Восточно-Казахстанская область\OSK_Pervomay\АПЗ')

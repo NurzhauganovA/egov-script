@@ -117,4 +117,4 @@ def get_data_values(directory):
 
 
 if __name__ == '__main__':
-    get_data_values(r'\\10.10.10.144\Serv-55\Отдел аренды\1.КаР-Тел\СМР ВВОД\Восточно-Казахстанская область\OSK_Pervomay')
+    get_data_values(r'\\10.10.10.144\Serv-55\Отдел аренды\1.КаР-Тел\1. СМР ВВОД\Восточно-Казахстанская область\OSK_Pervomay')

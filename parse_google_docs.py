@@ -84,10 +84,35 @@ def get_choice_licensor(address):
     return data
 
 
+def get_all_addresses(address):
+    replaced_address = replace_some_address(address)
+    parts = replaced_address.split(',')
+    result = []
+
+    for part in parts:
+        words = re.findall(r'\b[A-ЯЁ][а-яёA-ЯЁ-]*[а-яё]\b', part.strip())
+        result.extend(remove_suffix(word) for word in words if len(word) > 1)
+
+    return result
+
+
+def get_data_from_json_with_region(region, json_file):
+    with open(json_file, 'r') as file:
+        data = json.load(file, strict=False)
+        for item in data:
+            if region in item:
+                return data[item]
+
+
 def get_data_of_pm(region):
     json_file = 'contractor_data.json'
-    with open(json_file, 'r') as file:
-        data = json.load(file)
+    return get_data_from_json_with_region(region, json_file)
+
+
+def get_data_of_construction_inspector(region):
+    json_file = 'data_construction_inspector.json'
+    with open(json_file, 'r', encoding='utf-8') as file:
+        data = json.load(file, strict=False)
         for item in data:
             if region in item:
                 return data[item]
@@ -109,6 +134,14 @@ def get_phone_number(region):
     return ""
 
 
+def get_full_name_construction_inspector(region):
+    data = get_data_of_construction_inspector(region)
+    if data:
+        return data[0]
+
+    return ""
+
+
 def get_purpose_use_land_plot(is_lep):
     if "лэп" in is_lep.casefold():
         return "размещения и эксплуатации опор линии электропередач"
@@ -119,7 +152,7 @@ def get_purpose_use_land_plot(is_lep):
 def get_order_template(directory):
     files = os.listdir(directory)
     for file in files:
-        if file.endswith('.pdf') and 'схема' == file.casefold().split('_')[-1].split('.pdf')[0]:
+        if 'схема' in file.casefold() or 'схема' in file.casefold() and file.endswith('.pdf'):
             return os.path.join(directory, file)
 
 
@@ -153,6 +186,7 @@ def get_all_values(path):
                         "full_name_representative": get_full_name_representative(region),
                         "phone_number": get_phone_number(region),
                         "purpose_use_land_plot": get_purpose_use_land_plot(is_lep),
+                        "requested_right_use_arg": "временное возмездное землепользование сроком на 2 года",
                         "order_template": get_order_template(directory),
                         "area": get_area(is_lep, area),
                         "region": region,
@@ -168,6 +202,7 @@ def get_all_values(path):
                         "full_name_representative": get_full_name_representative(region),
                         "phone_number": get_phone_number(region),
                         "purpose_use_land_plot": get_purpose_use_land_plot(is_lep),
+                        "requested_right_use_arg": "временное возмездное землепользование сроком на 2 года",
                         "order_template": get_order_template(directory),
                         "area": get_area(is_lep, area),
                         "region": region,
@@ -196,6 +231,17 @@ def get_choice_licensor_by_object_name(object_name):
     return ""
 
 
+def get_all_addresses_by_object_name(object_name):
+    for row in code_worksheet.get_all_values()[2:]:
+        name = row[3]
+        address = row[4]
+
+        if address and name in object_name:
+            return get_all_addresses(address)
+
+    return ""
+
+
 def get_full_name_representative_by_object_name(object_name):
     for row in code_worksheet.get_all_values()[2:]:
         name = row[3]
@@ -218,16 +264,29 @@ def get_phone_number_by_object_name(object_name):
     return ""
 
 
+def get_full_name_construction_inspector_by_object_name(object_name):
+    for row in code_worksheet.get_all_values()[2:]:
+        name = row[3]
+        region = row[2]
+
+        if region and name in object_name:
+            return get_full_name_construction_inspector(region)
+
+    return ""
+
+
 def get_address_by_object_name(object_name):
     for row in code_worksheet.get_all_values()[2:]:
         name = row[3]
         address = row[4]
 
-        if address and object_name in name:
+        if address and name in object_name:
             return address
 
     return ""
 
 
-app = get_all_values(r'\\10.10.10.144\Serv-55\Отдел аренды\1.КаР-Тел\СМР ВВОД\Актюбинская область\AKT_Elovaya\1 этап')
-print(app)
+if __name__ == "__main__":
+    app = get_all_values(
+        r'\\10.10.10.144\Serv-55\Отдел аренды\1.КаР-Тел\1. СМР ВВОД\Восточно-Казахстанская область\OSK_Pervomay\1 этап')
+    print(app)

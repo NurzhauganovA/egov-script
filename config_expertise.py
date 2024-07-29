@@ -1,6 +1,5 @@
 import os
 import re
-
 import fitz
 
 
@@ -9,26 +8,20 @@ context = {}
 
 def set_order_main_info(apz_file: str):
     """
-    This function reads the APZ.pdf file and returns the information in a string
+        This function reads the APZ.pdf file and returns the information in a string
     """
 
     number_of_order = ''
     date_of_order = ''
 
     with fitz.open(apz_file) as pdf:
-        for page in pdf:
-            text = page.get_text()
+        text_lines = pdf[0].get_text().split('\n')[0]
+        pattern = r'Исх:\s(\d+/\d+)\sот\s(\d{2}\.\d{2}\.\d{4})'
+        match = re.search(pattern, text_lines)
 
-            number_match = re.search(r'\b\d{2,3}/\d\b', text)
-            if not number_match:
-                number_match = re.search(r'\b\d{2,3}/\s*\d\b', text)
-
-            number_of_order = number_match.group().replace(' ', '')
-
-            date_match = re.search(r'\b\d{2}\.\d{2}\.\d{4}\b', text)
-            if date_match:
-                date_of_order = date_match.group()
-            break
+        if match:
+            number_of_order = match.group(1)
+            date_of_order = match.group(2)
 
     context['number_of_order'] = number_of_order
     context['date_of_order'] = date_of_order
@@ -71,6 +64,22 @@ def remove_suffix(word):
         r'ый$', r'ий$',  # -ый, -ий
         r'ого$', r'его$',  # -ого, -его
         r'ский$', r'ской$',  # -ский, -ской
+        r'ская',  # -ская
+        r'ой$',  # -ой
+        r'ому$', r'ему$',  # -ому, -ему
+        r'ым$', r'им$',  # -ым, -им
+        r'ом$',  # -ом
+        r'ая$',  # -ая
+        r'ой$',  # -ой
+        r'ую$',  # -ую
+        r'е$',  # -е
+        r'ой$',  # -ой
+        r'ы$',  # -ы
+        r'и$',  # -и
+        r'я$',  # -я
+        r'ь$',  # -ь
+        r'и$',  # -и
+        r'о$',  # -о
     ]
 
     # Применим каждое регулярное выражение к слову
@@ -80,10 +89,22 @@ def remove_suffix(word):
     return word
 
 
+def set_correct_address_from_portal(address):
+    correct_version = {
+        "Улытау": "Ұлытау",
+        "Жетысу": "Жетісу",
+        "Жетису": "Жетісу"
+    }
+
+    for word in correct_version:
+        address = address.replace(word, correct_version[word])
+
+    return address
+
+
 def first_non_none(groups):
     suffixes = ["область", "обл", "сельский округ", "с/о", "c\о", "район", "р-н", "город", "г."]
     for group in groups:
-        print(group)
         if group is not None and group not in suffixes:
             return group
     return ""
@@ -96,20 +117,23 @@ def set_region_name(expertise_file):
 
     address = get_region_address(expertise_file)
     adrs = replace_some_address(address)
-    print("adrs:", adrs)
 
     match_obl = re.search(
-        r'([а-яА-ЯёЁ-]+)\s*область|область\s*([а-яА-ЯёЁ-]+)|([а-яА-ЯёЁ-]+)\s*обл|обл\s*([а-яА-ЯёЁ-]+)', adrs)
+        r'([а-яА-ЯёЁ-]+)\s*область|область\s*([а-яА-ЯёЁ-]+)|([а-яА-ЯёЁ-]+)\s*обл.|обл.\s*([а-яА-ЯёЁ-]+)', adrs,
+        re.IGNORECASE)
     match_sel = re.search(
-        r'([а-яА-я]+)\s*сельский округ|сельский округ\s*([а-яА-я]+)|([а-яА-я]+)\s*с\Wо|с\Wо\s*([а-яА-я]+)', adrs)
-    match_region = re.search(r'([а-яА-я]+)\s*район|район\s*([а-яА-я]+)|([а-яА-я]+)\s*р\Wн|р\Wн\s*([а-яА-я]+)', adrs)
+        r'([а-яА-я]+)\s*сельский округ|сельский округ\s*([а-яА-я]+)|([а-яА-я]+)\s*с\Wо|с\Wо\s*([а-яА-я]+)', adrs,
+        re.IGNORECASE)
+    match_region = re.search(r'([а-яА-я]+)\s*район|район\s*([а-яА-я]+)|([а-яА-я]+)\s*р\Wн|р\Wн\s*([а-яА-я]+)', adrs,
+                             re.IGNORECASE)
     match_city = re.search(
-        r'([а-яА-Я]+)(?:\s*\([^)]+\))?\s*(г\.|город)\s*|(г\.|город)\s*(?:\s*\([^)]+\))?\s*([а-яА-Я]+)', adrs)
+        r'([а-яА-Я]+)(?:\s*\([^)]+\))?\s*(г\.|город)\s*|(г\.|город)\s*(?:\s*\([^)]+\))?\s*([а-яА-Я]+)', adrs,
+        re.IGNORECASE)
 
-    context["oblast"] = remove_suffix(first_non_none(match_obl.groups() if match_obl else []))
-    context["sel_okrug"] = remove_suffix(first_non_none(match_sel.groups() if match_sel else []))
-    context["region"] = remove_suffix(first_non_none(match_region.groups() if match_region else []))
-    context["city"] = remove_suffix(first_non_none(match_city.groups() if match_city else []))
+    context["oblast"] = set_correct_address_from_portal(remove_suffix(first_non_none(match_obl.groups() if match_obl else [])))
+    context["sel_okrug"] = set_correct_address_from_portal(remove_suffix(first_non_none(match_sel.groups() if match_sel else [])))
+    context["region"] = set_correct_address_from_portal(remove_suffix(first_non_none(match_region.groups() if match_region else [])))
+    context["city"] = set_correct_address_from_portal(remove_suffix(first_non_none(match_city.groups() if match_city else [])))
 
 
 def set_questionnaire_examination(apz_file):
@@ -128,6 +152,7 @@ def set_questionnaire_examination(apz_file):
             match_customer = re.search(r'Заказчик \(застройщик, инвестор\):\s*(.+?)\s*_', text)
             match_kaz = re.search(r'Объектің атауы:\s*(.+?)\s*;', text)
             match_rus = re.search(r'Наименование объекта:\s*(.+?)\s*;', text)
+
             if match_customer:
                 customer = match_customer.group(1).strip()
             if match_kaz:
@@ -275,4 +300,4 @@ def config_main(path):
 
 
 if __name__ == '__main__':
-    config_main(r'\\10.10.10.144\Serv-55\Отдел аренды\1.КаР-Тел\СМР ВВОД\Алматинская, Жетысуская область и Алмата\TLD_Zhumat\экспертиза')
+    config_main(r'\\10.10.10.144\Serv-55\Отдел аренды\1.КаР-Тел\1. СМР ВВОД\Восточно-Казахстанская область\OSK_Pervomay\экспертиза картел')

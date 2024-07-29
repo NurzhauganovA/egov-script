@@ -3,7 +3,8 @@ import fitz
 import re
 
 from parse_google_docs import get_full_name_representative_by_object_name, get_phone_number_by_object_name, \
-    get_choice_licensor_by_object_name
+    get_choice_licensor_by_object_name, get_all_addresses_by_object_name, \
+    get_full_name_construction_inspector_by_object_name
 
 context = {}
 
@@ -39,6 +40,11 @@ def personal_data(object_name):
     append_to_context('phone_number', phone_number)
 
 
+def set_chief_construction_data(object_name):
+    full_name = get_full_name_construction_inspector_by_object_name(object_name)
+    append_to_context('full_name_construction_inspector', full_name)
+
+
 def set_customer_data():
     customer_data = {
         "company_name": 'ТОО "КаР-Тел"',
@@ -54,22 +60,9 @@ def set_customer_data():
     context['customer_data'] = customer_data
 
 
-def set_location_of_the_object():
-    address = context["choice_licensor"]
-    result = []
-    if address["oblast"]:
-        result.append(address["oblast"])
-    if address["city"]:
-        result.append(address["city"])
-    if address["region"]:
-        result.append(address["region"])
-    if address["sel_okrug"]:
-        result.append(address["sel_okrug"])
-
-    if len(result) == 2:
-        result.append(result[-1])
-
-    context['location_of_the_object'] = result
+def set_location_of_the_object(object_name):
+    address = get_all_addresses_by_object_name(object_name)
+    context['location_of_the_object'] = address
 
 
 def get_date_number_expertise_conclusion(text_lines):
@@ -95,11 +88,13 @@ def get_data_values(directory):
     file = get_file_from_directory(directory)
     text = get_text_of_file(file)
     text_lines = text.split('\n')
+    object_name = directory.split('\\')[-1]
 
-    choice_licensor(directory.split('\\')[-1])
-    personal_data(directory.split('\\')[-1])
+    choice_licensor(object_name)
+    personal_data(object_name)
+    set_chief_construction_data(object_name)
     set_customer_data()
-    set_location_of_the_object()
+    set_location_of_the_object(object_name)
     get_date_number_expertise_conclusion(text_lines)
 
     print("context: ", context)
@@ -107,4 +102,4 @@ def get_data_values(directory):
 
 
 if __name__ == '__main__':
-    get_data_values(r'\\10.10.10.144\Serv-55\Отдел аренды\1.КаР-Тел\СМР ВВОД\Абайская область\SEM_Ostanovka')
+    get_data_values(r'\\10.10.10.144\Serv-55\Отдел аренды\1.КаР-Тел\СМР ВВОД\Восточно-Казахстанская область\OSK_Pervomay')

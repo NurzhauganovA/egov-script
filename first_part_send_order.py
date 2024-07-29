@@ -1,6 +1,9 @@
+import ctypes
+import keyword
 import os
 import sys
 
+import keyboard
 import pygetwindow as gw
 import pyperclip
 import pyautogui
@@ -17,10 +20,12 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 from parse_google_docs import get_all_values
+from logging_modules import get_file_logger
 
 
 created_orders = []
 absolute_path = os.path.dirname(os.path.abspath(__file__))
+file_name = "first_part_send_order.log"
 
 
 def moveAllWindows():
@@ -42,17 +47,32 @@ def moveAllWindows():
     time.sleep(2)
 
 
+def get_current_keyboard_layout():
+    hwnd = ctypes.windll.user32.GetForegroundWindow()
+    thread_id = ctypes.windll.user32.GetWindowThreadProcessId(hwnd, None)
+    layout_id = ctypes.windll.user32.GetKeyboardLayout(thread_id)
+    return layout_id
+
+
+def switch_to_english_keyboard():
+    english_layout = 67699721
+    current_layout = get_current_keyboard_layout()
+
+    while current_layout != english_layout:
+        pyautogui.hotkey('alt', 'shift')
+        current_layout = get_current_keyboard_layout()
+        time.sleep(0.1)
+        print(current_layout)
+
+
 def sing_in_ncalayer(search):
-    search_certificate_points = (1574, 105)
+    search_certificate_points = (1632, 80)  # (1574, 105)
     pyautogui.click(search_certificate_points)
-    time.sleep(1)
     pyperclip.copy(search)
-    time.sleep(1)
     pyautogui.hotkey('ctrl', 'v')
-    time.sleep(1)
     pyautogui.press('enter')
     time.sleep(1)
-    AUTH_file_points = (711, 276)
+    AUTH_file_points = (444, 214)  # (711, 276)
     pyautogui.click(AUTH_file_points)
     pyautogui.press('enter')
 
@@ -63,31 +83,32 @@ def automate_ncalayer(search):
         moveAllWindows()
         eds_directory_path = r"\\10.10.10.144\Serv-55\Отдел аренды\1.КаР-Тел\ЭЦП КаР-Тел"
         password = "May2021"
-        pyperclip.copy(eds_directory_path)
-        time.sleep(1)
-        choose_eds = (710, 622)
+        choose_eds = (538, 606)  # (710, 622)
         pyautogui.click(choose_eds)
         time.sleep(1)
         moveAllWindows()
-        type_eds_path = (1220, 100)
+
+        switch_to_english_keyboard()
+
+        type_eds_path = (1380, 80)  # (1220, 100)
         pyautogui.click(type_eds_path)
+
+        pyperclip.copy(eds_directory_path)
         pyautogui.hotkey('ctrl', 'v')
         pyautogui.press('enter')
         time.sleep(1)
         sing_in_ncalayer(search)
-        write_password_points = (498, 697)
+
+        write_password_points = (356, 654)  # (498, 697)
         pyautogui.click(write_password_points)
-        time.sleep(1)
         pyperclip.copy(password)
-        time.sleep(1)
         pyautogui.hotkey('ctrl', 'v')
-        time.sleep(1)
         pyautogui.press('enter')
         time.sleep(1)
         moveAllWindows()
         pyautogui.press('enter')
         time.sleep(1)
-        sign_certificate_points = (843, 1001)
+        sign_certificate_points = (870, 911)  # (843, 1001)
         pyautogui.click(sign_certificate_points)
     except Exception as e:
         raise ValueError(f"Ошибка automate_ncalayer(): {e}")
@@ -101,10 +122,14 @@ def main(path):
     full_name_representative_arg = context["full_name_representative"]
     phone_number_arg = context["phone_number"]
     location_land_plot_arg = context["address"]
-    requested_right_use_arg = "временное возмездное землепользование сроком на 2 года"
+    requested_right_use_arg = context["requested_right_use_arg"]
     area_arg = context["area"]
     purpose_use_land_plot_arg = context["purpose_use_land_plot"]
     schema_plan_land_plot_arg = context["order_template"]
+
+    empty_fields = [key for key, value in context.items() if value == "" or value is None]
+    if empty_fields:
+        get_file_logger(file_name).error(f"Не заполнены поля: {', '.join(empty_fields)}")
 
     try:
         options = Options()
@@ -166,6 +191,68 @@ def change_elicense_language_to_russian(driver):
     languages.find_elements(By.TAG_NAME, "a")[1].click()
 
 
+def download_order_file(driver, order_number):
+    WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.ID, "mainDropbtnIndLK"))
+    ).click()
+
+    WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.ID, "myDropdownMainLK"))
+    ).find_elements(By.TAG_NAME, 'a')[2].click()
+
+    time.sleep(2)
+    close_table = driver.find_elements(By.CLASS_NAME, "ui-dialog-titlebar-close")
+
+    if close_table:
+        close_table[0].click()
+
+    WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.ID, 'GlobalNumberStr'))
+    ).send_keys(order_number)
+    time.sleep(2)
+
+    WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.ID, 'submit'))
+    ).click()
+
+    time.sleep(2)
+    close_table = driver.find_elements(By.CLASS_NAME, "ui-dialog-titlebar-close")
+
+    if close_table:
+        close_table[0].click()
+
+    WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located(
+            (By.XPATH, '/html/body/div[5]/div[2]/div[3]/div/div/table/tbody/tr[2]/td[4]/div/a'))
+    ).click()
+
+    time.sleep(2)
+    close_table = driver.find_elements(By.CLASS_NAME, "ui-dialog-titlebar-close")
+
+    if close_table:
+        close_table[0].click()
+
+    WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.ID, 'btnDownloadRequest'))
+    ).click()
+
+    time.sleep(2)
+    WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.ID, 'menuitem-1010-itemEl'))
+    ).click()
+
+    time.sleep(5)
+
+    file_path = os.path.join(absolute_path, 'files', order_number + '_ru.pdf')
+
+    if os.path.exists(file_path):
+        get_file_logger(file_name).info(f"Файл заказа {order_number} скачен.")
+    else:
+        get_file_logger(file_name).error(f"Файл заказа {order_number} не скачен.")
+
+    return file_path
+
+
 def search_by_query_in_portal(driver, query, choice_licensor_arg, full_name_representative_arg, phone_number_arg,
                               location_land_plot_arg, requested_right_use_arg, area_arg, purpose_use_land_plot_arg,
                               schema_plan_land_plot_arg):
@@ -195,11 +282,15 @@ def elicense_new_tab(driver, choice_licensor_arg, full_name_representative_arg, 
     try:
         driver.get("https://elicense.kz")
         change_elicense_language_to_russian(driver)
+
+        download_order_file(driver, "KZ65RVX01133358")
+        save_file_in_server("KZ65RVX01133358", schema_plan_land_plot_arg, schema_plan_land_plot_arg)
+
         WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.ID, "new-service-button-af-4"))
         ).click()
         driver.implicitly_wait(100)
-        driver.find_elements(By.CLASS_NAME, "new-detail-single")[0].find_elements(By.TAG_NAME, "a")[4].click()
+        driver.find_elements(By.CLASS_NAME, "new-detail-single")[0].find_elements(By.TAG_NAME, "a")[2].click()
 
         driver.find_elements(By.TAG_NAME, "li")[0].find_element(By.TAG_NAME, "a").click()
 
@@ -220,59 +311,63 @@ def elicense_new_tab(driver, choice_licensor_arg, full_name_representative_arg, 
 
         # Находим все элементы списка областей
         oblast_list = regions_box.find_elements(By.TAG_NAME, "li")
-        if city:
+
+        try:
+            if city:
+                for oblast_item in oblast_list:
+                    oblast_name = oblast_item.find_element(By.TAG_NAME, "span").text
+                    if city in oblast_name:
+                        oblast_item.find_element(By.TAG_NAME, "ins").click()
+                        WebDriverWait(driver, 10).until(
+                            EC.presence_of_element_located((By.TAG_NAME, "ul"))
+                        )
+                        oblast_item.find_element(By.TAG_NAME, "li").find_element(By.TAG_NAME, "span").click()
+                        break
+            found_list = []
             for oblast_item in oblast_list:
                 oblast_name = oblast_item.find_element(By.TAG_NAME, "span").text
-                if city in oblast_name:
+                if oblast in oblast_name:
                     oblast_item.find_element(By.TAG_NAME, "ins").click()
                     WebDriverWait(driver, 10).until(
                         EC.presence_of_element_located((By.TAG_NAME, "ul"))
                     )
-                    oblast_item.find_element(By.TAG_NAME, "li").find_element(By.TAG_NAME, "span").click()
-                    break
-        found_list = []
-        for oblast_item in oblast_list:
-            oblast_name = oblast_item.find_element(By.TAG_NAME, "span").text
-            if oblast in oblast_name:
-                oblast_item.find_element(By.TAG_NAME, "ins").click()
-                WebDriverWait(driver, 10).until(
-                    EC.presence_of_element_located((By.TAG_NAME, "ul"))
-                )
-                sel_okrug_list = oblast_item.find_elements(By.TAG_NAME, "li")
-                city_list = oblast_item.find_elements(By.TAG_NAME, "li")
+                    sel_okrug_list = oblast_item.find_elements(By.TAG_NAME, "li")
+                    city_list = oblast_item.find_elements(By.TAG_NAME, "li")
 
-                if sel_okrug:
-                    for sel_okrug_item in sel_okrug_list:
-                        sel_okrug_name = sel_okrug_item.find_element(By.TAG_NAME, "span").text
-                        if sel_okrug in sel_okrug_name:
-                            clickable_obj = sel_okrug_item.find_element(By.TAG_NAME, "span")
-                            found_list.append(clickable_obj)
-                            break
-                if region:
-                    for region_item in sel_okrug_list:
-                        region_name = region_item.find_element(By.TAG_NAME, "span").text
-                        if region in region_name:
-                            clickable_obj = region_item.find_element(By.TAG_NAME, "span")
-                            if len(found_list) > 1 and clickable_obj.text in [item.text for item in found_list]:
-                                found_list = [clickable_obj]
-                            else:
+                    if sel_okrug:
+                        for sel_okrug_item in sel_okrug_list:
+                            sel_okrug_name = sel_okrug_item.find_element(By.TAG_NAME, "span").text
+                            if sel_okrug in sel_okrug_name:
+                                clickable_obj = sel_okrug_item.find_element(By.TAG_NAME, "span")
                                 found_list.append(clickable_obj)
-                            break
-                if city:
-                    for city_item in city_list:
-                        city_name = city_item.find_element(By.TAG_NAME, "span").text
-                        if city in city_name:
-                            clickable_obj = city_item.find_element(By.TAG_NAME, "span")
-                            if len(found_list) > 1 and clickable_obj.text in [item.text for item in found_list]:
-                                found_list = [clickable_obj]
-                            else:
-                                found_list.append(clickable_obj)
-                            break
+                                break
+                    if region:
+                        for region_item in sel_okrug_list:
+                            region_name = region_item.find_element(By.TAG_NAME, "span").text
+                            if region in region_name:
+                                clickable_obj = region_item.find_element(By.TAG_NAME, "span")
+                                if len(found_list) > 1 and clickable_obj.text in [item.text for item in found_list]:
+                                    found_list = [clickable_obj]
+                                else:
+                                    found_list.append(clickable_obj)
+                                break
+                    if city:
+                        for city_item in city_list:
+                            city_name = city_item.find_element(By.TAG_NAME, "span").text
+                            if city in city_name:
+                                clickable_obj = city_item.find_element(By.TAG_NAME, "span")
+                                if len(found_list) > 1 and clickable_obj.text in [item.text for item in found_list]:
+                                    found_list = [clickable_obj]
+                                else:
+                                    found_list.append(clickable_obj)
+                                break
 
-                if found_list:
-                    found_list[0].click()
+                    if found_list:
+                        found_list[0].click()
+                        break
                     break
-                break
+        except Exception as e:
+            get_file_logger(file_name).error(f"Ошибка при выборе адреса лицензий: {e}")
 
         time.sleep(10)
         driver.implicitly_wait(100)
@@ -285,11 +380,13 @@ def elicense_new_tab(driver, choice_licensor_arg, full_name_representative_arg, 
         create_order(driver, full_name_representative_arg, phone_number_arg, location_land_plot_arg,
                      requested_right_use_arg, area_arg, purpose_use_land_plot_arg, schema_plan_land_plot_arg)
     except Exception as e:
+        get_file_logger(file_name).error(f"Ошибка при создании заказа: {e}")
         raise ValueError(f"Ошибка elicense_new_tab(): {e}")
 
 
 def create_order(driver, full_name_representative_arg, phone_number_arg, location_land_plot_arg,
                  requested_right_use_arg, area_arg, purpose_use_land_plot_arg, schema_plan_land_plot_arg):
+    time.sleep(3)
     number_orders = driver.find_element(By.ID, "panel-1010-formTable").find_elements(
         By.TAG_NAME, "tbody"
     )[0].find_element(By.TAG_NAME, "tr").find_elements(
@@ -377,7 +474,7 @@ def create_order(driver, full_name_representative_arg, phone_number_arg, locatio
         EC.presence_of_element_located((By.ID, "button-1020-btnIconEl"))
     ).click()
 
-    time.sleep(3)
+    time.sleep(5)
     driver.implicitly_wait(100)
 
     iframe = WebDriverWait(driver, 10).until(
@@ -392,14 +489,14 @@ def create_order(driver, full_name_representative_arg, phone_number_arg, locatio
         EC.presence_of_element_located((By.CLASS_NAME, "new-lk-wrapper"))
     ).find_element(By.TAG_NAME, "div").find_elements(By.TAG_NAME, "button")[1].click()
 
-    time.sleep(5)
+    time.sleep(10)
     driver.implicitly_wait(100)
 
     WebDriverWait(driver, 10).until(
         EC.presence_of_element_located((By.ID, "file"))
     ).send_keys(schema_plan_land_plot_arg)
 
-    time.sleep(10)
+    time.sleep(5)
     driver.implicitly_wait(100)
 
     WebDriverWait(driver, 10).until(
@@ -416,6 +513,7 @@ def create_order(driver, full_name_representative_arg, phone_number_arg, locatio
 
         documents.find_elements(By.TAG_NAME, "tr")[1].find_elements(By.TAG_NAME, "td")[0].find_element(By.TAG_NAME, "a").click()
     except Exception as e:
+        get_file_logger(file_name).error(f"Ошибка при загрузке файла: {e}")
         print(e)
 
     time.sleep(5)
@@ -433,12 +531,6 @@ def create_order(driver, full_name_representative_arg, phone_number_arg, locatio
     driver.find_element(By.ID, "toolbar-1014-targetEl").find_elements(By.TAG_NAME, "div")[2].click()  # button "Next"
     driver.implicitly_wait(100)
 
-    #  Download the document
-    # WebDriverWait(driver, 10).until(
-    #     EC.presence_of_element_located((By.ID, "btnDownloadRequest"))
-    # ).click()
-    # driver.find_element(By.XPATH, "/html/body/div[9]/div/div[2]/div/div[1]/a").click()
-
     #  Confirm the order with EDS
     WebDriverWait(driver, 10).until(
         EC.presence_of_element_located((By.CLASS_NAME, "new-login-tab"))
@@ -453,14 +545,6 @@ def create_order(driver, full_name_representative_arg, phone_number_arg, locatio
     ).find_element(By.TAG_NAME, "input").click()
 
     time.sleep(15)
-    #
-    # WebDriverWait(driver, 10).until(
-    #     EC.presence_of_element_located((By.ID, "RequesterSatisfactionWindow"))
-    # ).find_elements(By.TAG_NAME, "input")[0].click()
-    #
-    # WebDriverWait(driver, 10).until(
-    #     EC.presence_of_element_located((By.ID, "RequesterSatisfactionWindow"))
-    # ).find_elements(By.TAG_NAME, "input")[4].click()
 
     while check_last_window() != "NCALayer":
         time.sleep(2)
@@ -474,62 +558,10 @@ def create_order(driver, full_name_representative_arg, phone_number_arg, locatio
         close_table[0].click()
 
     # after confirmation use EDS
-    WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.ID, "LkBox"))
-    ).click()
-
-    WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.ID, "myDropdownMainLK"))
-    ).find_elements(By.TAG_NAME, 'a')[2].click()
-
-    driver.implicitly_wait(100)
-    time.sleep(2)
-
-    close_table = driver.find_elements(By.CLASS_NAME, "ui-dialog-titlebar-close")
-
-    if close_table:
-        close_table[0].click()
-
-    WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.ID, 'GlobalNumberStr'))
-    ).send_keys(number_orders)
-    time.sleep(2)
-
-    WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.ID, 'submit'))
-    ).click()
-    driver.implicitly_wait(100)
-
-    close_table = driver.find_elements(By.CLASS_NAME, "ui-dialog-titlebar-close")
-
-    if close_table:
-        close_table[0].click()
-
-    WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.XPATH, '/html/body/div[5]/div[2]/div[3]/div/div/table/tbody/tr[2]/td[4]/div/a/img'))
-    ).click()
-    driver.implicitly_wait(100)
-    time.sleep(2)
-
-    close_table = driver.find_elements(By.CLASS_NAME, "ui-dialog-titlebar-close")
-
-    if close_table:
-        close_table[0].click()
-
-    WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.ID, 'btnDownloadRequest'))
-    ).click()
-    time.sleep(2)
-
-    WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.ID, 'menuitem-1010-itemEl'))
-    ).click()
-
-    time.sleep(15)
-    file_path = os.path.join(absolute_path, 'files', number_orders + '_ru.pdf')
+    file_path = download_order_file(driver, number_orders)
 
     save_file_in_server(number_orders, file_path, schema_plan_land_plot_arg)
-    time.sleep(15)
+    time.sleep(5)
 
     driver.quit()
 
@@ -554,6 +586,8 @@ def save_file_in_server(number_order, file_path, template):
     new_file_path = os.path.join(directory, new_file_name)
 
     os.system(f'copy "{file_path}" "{new_file_path}"')
+    get_file_logger(file_name).info(f"Файл {new_file_name} сохранен в директории {directory}")
+    os.remove(file_path)
 
 
 class EgovForm(QMainWindow):
@@ -595,6 +629,7 @@ class EgovForm(QMainWindow):
                     main(fr'{path}')
                     break
                 except Exception as e:
+                    get_file_logger(file_name).error(f"Произошла ошибка: {e}")
                     print("Произошла ошибка:", e)
                     time.sleep(2)
         else:
